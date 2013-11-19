@@ -31,7 +31,7 @@ int getFaceCoord(int* x, int* y ) {
 
     //-- 1. Load the cascades
     if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading face cascade\n"); return -1; };	
-	printf("CIAO\n");
+    printf("CIAO\n");
 
     //-- 2. Read the video stream
     capture.open( -1 );
@@ -47,7 +47,7 @@ int getFaceCoord(int* x, int* y ) {
 
         //-- 3. Apply the classifier to the frame
         Point pt = detectAndDisplay( frame );
-		*x = pt.x;
+        *x = pt.x;
         *y = pt.y;
         return 1;
         
@@ -59,7 +59,7 @@ int getFaceCoord(int* x, int* y ) {
 Point detectAndDisplay( Mat frame )
 {
     std::vector<Rect> faces;
-	
+    
     double scale = 1;
     Mat frame_gray;
 
@@ -68,33 +68,33 @@ Point detectAndDisplay( Mat frame )
 
     //-- Detect faces
     face_cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CASCADE_SCALE_IMAGE, Size(frame.cols*0.4,frame.rows*0.4) );
-		
-	
-	Point center;
+    
+    
+    Point center;
   if (faces.size() == 1 ) { //PROVA UNO SOLO
     
-	int i = 0;
-	
-		vector<Rect>::const_iterator r = faces.begin();
+     int i = 0;
+     
+     vector<Rect>::const_iterator r = faces.begin();
 
-	    Mat smallImgROI;
-	    vector<Rect> nestedObjects;
-	    
+     Mat smallImgROI;
+     vector<Rect> nestedObjects;
+     
 	    //Scalar color = colors[i%8];
-	    int radius;
-	    center.x = cvRound((r->x + r->width*0.5)*scale);
-	    center.y = cvRound((r->y + r->height*0.5)*scale);
+     int radius;
+     center.x = cvRound((r->x + r->width*0.5)*scale);
+     center.y = cvRound((r->y + r->height*0.5)*scale);
 
-	    radius = cvRound((r->width + r->height)*0.25*scale);
-	    circle( frame, center, radius, Scalar( 255, 0, 255 ), 3, 8, 0 );
-	
-	
+     radius = cvRound((r->width + r->height)*0.25*scale);
+     circle( frame, center, radius, Scalar( 255, 0, 255 ), 3, 8, 0 );
+     
+     
 		//-- Show what you got
-			
-	
-   }
+     
+     
+ }
 
-	imshow( window_name, frame );
-			return Point(center);
-    
+ imshow( window_name, frame );
+ return Point(center);
+
 }
