@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
+project( faces )
+find_package( OpenCV REQUIRED )
+link_directories( ~/local/lib )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_library(faces SHARED face.cpp )
+target_link_libraries( faces ${OpenCV_LIBS} )
+target_link_libraries( faces tbb )
