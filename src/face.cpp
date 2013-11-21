@@ -13,8 +13,23 @@ namespace {
 
     //String window_name = "Capture - face detection";
     cv::String face_cascade_name = "haarcascade_frontalface_alt.xml";
-    cv::CascadeClassifier face_cascade;
+    cv::CascadeClassifier* face_cascade;
 
+}
+
+cv::CascadeClassifier* init_cascade(const string& cascade, bool& ok ) {
+
+    cv::CascadeClassifier* face_cascade = new cv::CascadeClassifier();
+
+    if( ! (*face_cascade).load( cascade ) ) {
+         std::cerr << "--(!)Error loading face cascade" << std::endl; 
+         ok = false;    
+    }
+    else {
+        ok = true;
+    }
+
+    return face_cascade;
 }
 
 cv::Point detectAndDisplay( cv::Mat frame );
@@ -27,13 +42,16 @@ int getFaceCoord(int* x, int* y ) {
     
 
     cv::VideoCapture capture;
-    
 
     //-- 1. Load the cascades
-    if( !face_cascade.load( face_cascade_name ) )
-        { printf("--(!)Error loading face cascade\n"); 
+    bool ok;
+    face_cascade = init_cascade("haarcascade_frontalface_alt.xml",ok);    
+    
+    if( !ok ) { 
         return -1; 
     }	
+
+
     printf("CIAO\n");
 
     //-- 2. Read the video stream
@@ -62,9 +80,9 @@ int getFaceCoord(int* x, int* y ) {
     }
 
     capture.release();
-    return 1;
+    delete face_cascade;
     
-
+    return 1;
 }
 
 cv::Point detectAndDisplay( cv::Mat frame ) //usa frame e face_cascade
@@ -78,7 +96,7 @@ cv::Point detectAndDisplay( cv::Mat frame ) //usa frame e face_cascade
     cv::equalizeHist( frame_gray, frame_gray );
 
     //-- Detect faces
-    face_cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|cv::CASCADE_SCALE_IMAGE, 
+    face_cascade->detectMultiScale( frame_gray, faces, 1.1, 1, 0|cv::CASCADE_SCALE_IMAGE, 
                                     cv::Size(frame.cols*0.4,frame.rows*0.4) );
     
     
