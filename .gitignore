@@ -3,6 +3,8 @@
 *.pyc
 *.o
 *.so
+cython/face.cpp
+*.xml
 
 build
 release
