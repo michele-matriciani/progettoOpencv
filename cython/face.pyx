@@ -1,5 +1,7 @@
 cimport cface
 
-cdef int get_face_coord(int* x, int* y):
-    return cface.getFaceCoord(x , y)
+def get_face_coord():
+    cdef int x, y 
+    retval = cface.getFaceCoord(&x , &y)
+    return (retval,x,y)
 
