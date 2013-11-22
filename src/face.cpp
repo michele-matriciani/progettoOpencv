@@ -46,9 +46,7 @@ namespace {
     }
 }
 
-
-cv::Point detectAndDisplay( cv::Mat, cv::CascadeClassifier* );
-
+bool detectAndDisplay( cv::Point& );
 
 bool init() {
     bool ok;
@@ -61,36 +59,50 @@ bool init() {
     return ok;
 }
 
+bool isInitialized() {
+    return face_cascade && capture; 
+}
 
-int getFaceCoord(int* x, int* y ) {
+void finalize() {
+    if ( isInitialized() ) { 
+        capture->release();
+        delete face_cascade;
+        face_cascade = NULL;
+        delete capture;
+        capture = NULL;
+    }
+}
 
-    cv::Mat frame;
-
-    //-- 2. Read the video stream
-    while ( capture->read(frame) ) {
-        if( frame.empty() )
-        {
-            printf(" --(!) No captured frame -- Break!");
-            break;
-        }
-
-        //-- 3. Apply the classifier to the frame
-        cv::Point pt = detectAndDisplay( frame , face_cascade);
-        *x = pt.x;
-        *y = pt.y;
-        break;
+bool getFaceCoord(int* x, int* y ) {
+    if ( !isInitialized() ) {
+        std::cerr << "Pointers not initialized" << std::endl;
+        return false;
     }
 
-    capture->release();
-    delete face_cascade;
-    delete capture;
-    
-    return 1;
+    cv::Point pt;
+
+    if ( detectAndDisplay( pt ) ) {
+        *x = pt.x;
+        *y = pt.y;
+        return true;
+    } 
+
+    return false;
 }
 
 
-cv::Point detectAndDisplay( cv::Mat frame , cv::CascadeClassifier* face_cascade) //usa frame e face_cascade
-{
+/******* private api *******/
+
+
+bool detectAndDisplay( cv::Point& center ) {
+    cv::Mat frame;
+    assert(capture);
+    capture->read(frame);
+    if( frame.empty() ) {
+        std::cerr << " --(!) No captured frame -- Break!" << std::endl;
+        return false;
+    }
+
     std::vector<cv::Rect> faces;
     
     double scale = 1;
@@ -100,28 +112,22 @@ cv::Point detectAndDisplay( cv::Mat frame , cv::CascadeClassifier* face_cascade)
     cv::equalizeHist( frame_gray, frame_gray );
 
     //-- Detect faces
+    assert(face_cascade);
     face_cascade->detectMultiScale( frame_gray, faces, 1.1, 1, 0|cv::CASCADE_SCALE_IMAGE, 
                                     cv::Size(frame.cols*0.4,frame.rows*0.4) );
     
-    cv::Point center;
     if (faces.size() == 1 ) { //PROVA UNO SOLO
     
-    int i = 0;
-     
-    std::vector<cv::Rect>::const_iterator r = faces.begin();
+        int i = 0;
+         
+        std::vector<cv::Rect>::const_iterator r = faces.begin();
 
-    cv::Mat smallImgROI;
-    std::vector<cv::Rect> nestedObjects;
-     
-	    //Scalar color = colors[i%8];
-    int radius;
-    center.x = cvRound((r->x + r->width*0.5)*scale);
-    center.y = cvRound((r->y + r->height*0.5)*scale);
-
-    radius = cvRound((r->width + r->height)*0.25*scale);
-    cv::circle( frame, center, radius, cv::Scalar( 255, 0, 255 ), 3, 8, 0 );     
+        cv::Mat smallImgROI;
+        std::vector<cv::Rect> nestedObjects;
+         
+        center.x = cvRound((r->x + r->width*0.5)*scale);
+        center.y = cvRound((r->y + r->height*0.5)*scale);
     }
 
-    //imshow( window_name, frame );
-    return cv::Point(center);
+    return true;
 }

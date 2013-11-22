@@ -1,2 +1,3 @@
 bool init();
-int getFaceCoord( int* x, int* y );
+void finalize();
+bool getFaceCoord( int* x, int* y );
