@@ -9,12 +9,13 @@
 
 namespace {
     cv::CascadeClassifier* face_cascade;
+    cv::CascadeClassifier* eye_cascade;
     cv::VideoCapture* capture;
     
-    cv::CascadeClassifier* init_cascade(const std::string& cascade, bool& ok ) {
+    cv::CascadeClassifier* init_face_cascade(const std::string& cascade, bool& ok ) {
 
         face_cascade = new cv::CascadeClassifier();
-
+        
         if( ! face_cascade->load( cascade ) ) {
              std::cerr << "--(!)Error loading face cascade" << std::endl; 
              delete face_cascade;
@@ -25,6 +26,21 @@ namespace {
         }
 
         return face_cascade;
+    }
+
+    cv::CascadeClassifier* init_eye_cascade(const std::string& cascade, bool& ok ) {
+        eye_cascade = new cv::CascadeClassifier();
+
+        if( ! eye_cascade->load( cascade ) ) {
+            std::cerr << "--(!)Error loading eye cascade" << std::endl; 
+            delete eye_cascade;
+            ok = false;
+        }
+        else {
+            ok = true;
+        }
+
+        return eye_cascade;
     }
 
     cv::VideoCapture* init_video(bool& ok) {
@@ -50,24 +66,37 @@ bool detectAndDisplay( cv::Point& );
 
 bool init() {
     bool ok;
-    face_cascade = init_cascade("haarcascade_frontalface_alt.xml",ok);
+    face_cascade = init_face_cascade("/home/michele/workspace/progettoOpencv/cython/haarcascade_frontalface_alt.xml",ok);
+    
     if( !ok ) { 
         return false; 
     }   
-
+    //controllare se cascade e' giusto
+    eye_cascade = init_eye_cascade("/home/michele/workspace/progettoOpencv/cython/haarcascade_mcs_eyepair_big.xml",ok);
+    if( !ok ) { 
+        return false; 
+    }   
     capture = init_video(ok);
     return ok;
 }
 
 bool isInitialized() {
-    return face_cascade && capture; 
+    return face_cascade && eye_cascade && capture; 
 }
 
 void finalize() {
     if ( isInitialized() ) { 
+        cv::Mat frame;
         capture->release();
+        do {
+            capture->read(frame);
+        } while( !frame.empty() );
+        
+        
         delete face_cascade;
         face_cascade = NULL;
+        delete eye_cascade;
+        eye_cascade = NULL;
         delete capture;
         capture = NULL;
     }
@@ -104,7 +133,8 @@ bool detectAndDisplay( cv::Point& center ) {
     }
 
     std::vector<cv::Rect> faces;
-    
+    std::vector<cv::Rect> eyes;
+
     double scale = 1;
     cv::Mat frame_gray;
 
@@ -113,20 +143,37 @@ bool detectAndDisplay( cv::Point& center ) {
 
     //-- Detect faces
     assert(face_cascade);
-    face_cascade->detectMultiScale( frame_gray, faces, 1.1, 1, 0|cv::CASCADE_SCALE_IMAGE, 
+    assert(eye_cascade);
+
+    //modificare -> usare face_cascade per rilevare grandezza volto (distanza da camera)
+    face_cascade->detectMultiScale( frame_gray, faces, 1.1, 1,
+                                    0|cv::CASCADE_SCALE_IMAGE, 
                                     cv::Size(frame.cols*0.4,frame.rows*0.4) );
     
     if (faces.size() == 1 ) { //PROVA UNO SOLO
-    
-        int i = 0;
-         
-        std::vector<cv::Rect>::const_iterator r = faces.begin();
+        eye_cascade->detectMultiScale( frame_gray, eyes, 1.1, 1,
+                                    0|cv::CASCADE_SCALE_IMAGE, 
+                                    cv::Size(frame.cols*0.1,frame.rows*0.1) );
+        
+        if (eyes.size() == 1) {
+            int i = 0;
+            
+            std::vector<cv::Rect>::const_iterator r = faces.begin();
 
-        cv::Mat smallImgROI;
-        std::vector<cv::Rect> nestedObjects;
-         
-        center.x = cvRound((r->x + r->width*0.5)*scale);
-        center.y = cvRound((r->y + r->height*0.5)*scale);
+            std::vector<cv::Rect>::const_iterator s = eyes.begin();
+
+            //calcolo area volto
+            int area = (r->x +r->width) * (r->y + r->height);
+
+            //modificare -> calcolare centro degli occhi invece del volto 
+                /*center.x = cvRound((s->x + s->width*0.5)*scale);
+                center.y = cvRound((s->y + s->height*0.5)*scale);
+                */
+
+            center.x = cvRound((r->x + r->width*0.5)*scale);
+            center.y = cvRound((r->y + r->height*0.5)*scale);
+
+        }
     }
 
     return true;
