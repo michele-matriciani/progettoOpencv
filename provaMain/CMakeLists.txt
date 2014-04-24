@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
+project( prova )
+find_package( OpenCV REQUIRED )
+link_directories( ~/local/lib )
+link_directories( ~/workspace/progettoOpencv/src/build )
+include_directories( ~/workspace/progettoOpencv/src )
+add_executable( prova  main.cpp)
+target_link_libraries( prova faces )

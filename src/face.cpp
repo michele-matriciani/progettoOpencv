@@ -12,6 +12,8 @@ namespace {
     cv::CascadeClassifier* eye_cascade;
     cv::VideoCapture* capture;
     
+    
+    
     cv::CascadeClassifier* init_face_cascade(const std::string& cascade, bool& ok ) {
 
         face_cascade = new cv::CascadeClassifier();
@@ -29,6 +31,7 @@ namespace {
     }
 
     cv::CascadeClassifier* init_eye_cascade(const std::string& cascade, bool& ok ) {
+        
         eye_cascade = new cv::CascadeClassifier();
 
         if( ! eye_cascade->load( cascade ) ) {
@@ -44,7 +47,7 @@ namespace {
     }
 
     cv::VideoCapture* init_video(bool& ok) {
-
+       
         capture = new cv::VideoCapture();
 
         capture->open( -1 );
@@ -62,27 +65,33 @@ namespace {
     }
 }
 
-bool detectAndDisplay( cv::Point& );
-
-bool init() {
-    bool ok;
-    face_cascade = init_face_cascade("/home/michele/workspace/progettoOpencv/cython/haarcascade_frontalface_alt.xml",ok);
-    
-    if( !ok ) { 
-        return false; 
-    }   
-    //controllare se cascade e' giusto
-    eye_cascade = init_eye_cascade("/home/michele/workspace/progettoOpencv/cython/haarcascade_mcs_eyepair_big.xml",ok);
-    if( !ok ) { 
-        return false; 
-    }   
-    capture = init_video(ok);
-    return ok;
-}
+bool detectAndDisplay( cv::Point&, int& area );
 
 bool isInitialized() {
     return face_cascade && eye_cascade && capture; 
 }
+
+bool init() {
+    if ( isInitialized() )
+        return true;
+    bool ok;
+    face_cascade = init_face_cascade("/home/michele/workspace/progettoOpencv/src/cascades/haarcascade_frontalface_default.xml",ok);
+    
+    if( !ok ) { 
+        return false; 
+    }   
+
+    //controllare se cascade e' giusto
+    eye_cascade = init_eye_cascade("/home/michele/workspace/progettoOpencv/src/cascades/haarcascade_mcs_eyepair_big.xml",ok);
+    if( !ok ) { 
+        return false; 
+    }   
+
+    capture = init_video(ok);
+    return ok;
+}
+
+
 
 void finalize() {
     if ( isInitialized() ) { 
@@ -102,17 +111,19 @@ void finalize() {
     }
 }
 
-bool getFaceCoord(int* x, int* y ) {
+bool getFaceCoord(int* x, int* y, int* z ) {
     if ( !isInitialized() ) {
         std::cerr << "Pointers not initialized" << std::endl;
         return false;
     }
 
     cv::Point pt;
+    int a = 0;
 
-    if ( detectAndDisplay( pt ) ) {
+    if ( detectAndDisplay( pt, a ) ) {
         *x = pt.x;
         *y = pt.y;
+        *z = a;
         return true;
     } 
 
@@ -123,7 +134,7 @@ bool getFaceCoord(int* x, int* y ) {
 /******* private api *******/
 
 
-bool detectAndDisplay( cv::Point& center ) {
+bool detectAndDisplay( cv::Point& center, int& a ) {
     cv::Mat frame;
     assert(capture);
     capture->read(frame);
@@ -146,35 +157,33 @@ bool detectAndDisplay( cv::Point& center ) {
     assert(eye_cascade);
 
     //modificare -> usare face_cascade per rilevare grandezza volto (distanza da camera)
-    face_cascade->detectMultiScale( frame_gray, faces, 1.1, 1,
+    face_cascade->detectMultiScale( frame_gray, faces, 1.1, 3,
                                     0|cv::CASCADE_SCALE_IMAGE, 
-                                    cv::Size(frame.cols*0.4,frame.rows*0.4) );
+                                    cv::Size(90,110) );
     
     if (faces.size() == 1 ) { //PROVA UNO SOLO
-        eye_cascade->detectMultiScale( frame_gray, eyes, 1.1, 1,
-                                    0|cv::CASCADE_SCALE_IMAGE, 
-                                    cv::Size(frame.cols*0.1,frame.rows*0.1) );
-        
-        if (eyes.size() == 1) {
-            int i = 0;
             
             std::vector<cv::Rect>::const_iterator r = faces.begin();
 
-            std::vector<cv::Rect>::const_iterator s = eyes.begin();
-
+            center.x = faces[0].x + faces[0].width*0.5;
+            center.y = faces[0].y + faces[0].height*0.1;
+            //center.x = cvRound((r->x + r->width* 0.5)*scale);
+            //center.y = cvRound((r->y + r->height*0.5)*scale);
+            
             //calcolo area volto
-            int area = (r->x +r->width) * (r->y + r->height);
-
-            //modificare -> calcolare centro degli occhi invece del volto 
-                /*center.x = cvRound((s->x + s->width*0.5)*scale);
-                center.y = cvRound((s->y + s->height*0.5)*scale);
-                */
-
-            center.x = cvRound((r->x + r->width*0.5)*scale);
-            center.y = cvRound((r->y + r->height*0.5)*scale);
-
-        }
+            //area = (r->x +r->width) * (r->y + r->height);
+            //if ( r->x > 0 && r->y > 0 )
+            //     area = r->width * r->height;
+            //if ( faces[0].x > 0 && faces[0].height > 0 )
+            //    area = faces[0].width * faces[0].height;           
+            //else
+            //    area = 0;
+            a = faces[0].width;
+        
     }
-
+    else {
+        return false;
+    }
+    
     return true;
 }
