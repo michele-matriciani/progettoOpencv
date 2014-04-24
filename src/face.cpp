@@ -9,7 +9,7 @@
 
 namespace {
     cv::CascadeClassifier* face_cascade;
-    cv::CascadeClassifier* eye_cascade;
+    //cv::CascadeClassifier* eye_cascade;
     cv::VideoCapture* capture;
     
     
@@ -29,7 +29,7 @@ namespace {
 
         return face_cascade;
     }
-
+/*
     cv::CascadeClassifier* init_eye_cascade(const std::string& cascade, bool& ok ) {
         
         eye_cascade = new cv::CascadeClassifier();
@@ -45,7 +45,7 @@ namespace {
 
         return eye_cascade;
     }
-
+*/
     cv::VideoCapture* init_video(bool& ok) {
        
         capture = new cv::VideoCapture();
@@ -68,7 +68,7 @@ namespace {
 bool detectAndDisplay( cv::Point&, int& area );
 
 bool isInitialized() {
-    return face_cascade && eye_cascade && capture; 
+    return face_cascade && /*eye_cascade &&*/ capture; 
 }
 
 bool init() {
@@ -80,13 +80,13 @@ bool init() {
     if( !ok ) { 
         return false; 
     }   
-
+/*
     //controllare se cascade e' giusto
     eye_cascade = init_eye_cascade("/home/michele/workspace/progettoOpencv/src/cascades/haarcascade_mcs_eyepair_big.xml",ok);
     if( !ok ) { 
         return false; 
     }   
-
+*/
     capture = init_video(ok);
     return ok;
 }
@@ -104,8 +104,8 @@ void finalize() {
         
         delete face_cascade;
         face_cascade = NULL;
-        delete eye_cascade;
-        eye_cascade = NULL;
+        /*delete eye_cascade;
+        eye_cascade = NULL;*/
         delete capture;
         capture = NULL;
     }
@@ -154,7 +154,7 @@ bool detectAndDisplay( cv::Point& center, int& a ) {
 
     //-- Detect faces
     assert(face_cascade);
-    assert(eye_cascade);
+    //assert(eye_cascade);
 
     //modificare -> usare face_cascade per rilevare grandezza volto (distanza da camera)
     face_cascade->detectMultiScale( frame_gray, faces, 1.1, 3,
